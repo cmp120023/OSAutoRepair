@@ -11,7 +11,7 @@
 | Date | Milestone / Issue | Branch | Tasks Completed | Hours |
 | :--- | :--- | :--- | :--- | :--- |
 | Nov 17, 2026 | Project Setup & Planning | `master` / `develop` | Client requirements discovery (2 hours), ASP.NET Core MVC scaffolding, NuGet/LocalDB setup, GitHub milestones & issues | 4.5 |
-| Nov 19, 2026 | M1: Database Shema & Technician Auth | `develop` / `feat/issue-1-ef-core-models ` | Create Core Models (1 hour) | Notes/Comprehension (45 min) | Client Communication (10 min) |
+| Nov 19, 2026 | M1: Database Shema & Technician Auth | `develop` / `feat/issue-1-ef-core-models ` | Create Core Models (2 hours) | Notes/Comprehension (1 hour) | Client Communication (15 min) |
 **Total Logged Hours:** `4.5 hrs` *(Update at the end of each work session)*
 
 ---
