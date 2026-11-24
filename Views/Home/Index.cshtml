@@ -12,12 +12,9 @@
         <p class="col-md-8 fs-5 text-light">
             Honest, straightforward automotive maintenance and repair. Schedule your service online in seconds—no account required.
         </p>
-        <div class="mt-4 d-flex flex-wrap gap-2">
+        <div class="mt-4">
             <a asp-controller="Home" asp-action="Book" class="btn btn-warning btn-lg fw-semibold px-4">
                 Book an Appointment
-            </a>
-            <a href="#services" class="btn btn-outline-light btn-lg px-4">
-                View Services
             </a>
         </div>
     </div>
@@ -84,9 +81,6 @@
                                     Est. @service.DefaultDurationHours @(service.DefaultDurationHours == 1 ? "hr" : "hrs")
                                 </span>
                             </div>
-                            <p class="fs-5 text-success fw-semibold mb-2">
-                                Starting at @service.BaseEstimate.ToString("C")
-                            </p>
                             <p class="card-text text-muted flex-grow-1">
                                 @(service.Name.Equals("Oil", StringComparison.OrdinalIgnoreCase)
                                     ? "Routine oil and filter service to keep your engine protected and running smoothly."
