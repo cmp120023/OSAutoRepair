@@ -27,6 +27,12 @@ namespace OSAutoRepair.Services
         public async Task<bool> IsDateClosedAsync(DateTime date)
         {
             var targetDate = date.Date;
+
+            if (targetDate.DayOfWeek == DayOfWeek.Sunday || targetDate.DayOfWeek == DayOfWeek.Monday)
+            {
+                return true;
+            }
+
             return await _context.ClosedDates
                 .AnyAsync(c => c.Date.Date == targetDate);
         }
