@@ -1,0 +1,204 @@
+@model OSAutoRepair.ViewModels.PublicBookingViewModel
+
+@{
+    ViewData["Title"] = "Book an Appointment | O.S. Auto Repair";
+    var minDate = DateTime.Today.AddDays(2).ToString("yyyy-MM-dd");
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-controller="Home" asp-action="Index" class="text-decoration-none">&larr; Back to Home</a>
+            <h1 class="fw-bold mt-2">Book an Appointment</h1>
+            <p class="text-muted">
+                Online appointments must be scheduled at least <strong>2 days in advance</strong> during shop hours (9:00 AM – 5:00 PM).
+            </p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form asp-action="Book" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">1. Service &amp; Schedule</h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12">
+                            <label asp-for="ServiceCategoryId" class="form-label fw-semibold"></label>
+                            <select asp-for="ServiceCategoryId"
+                                    asp-items="Model.ServiceCategories"
+                                    class="form-select"
+                                    id="serviceCategorySelect">
+                                <option value="">-- Select a Service --</option>
+                            </select>
+                            <span asp-validation-for="ServiceCategoryId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AppointmentDate" class="form-label fw-semibold"></label>
+                            <input asp-for="AppointmentDate"
+                                   type="date"
+                                   min="@minDate"
+                                   class="form-control"
+                                   id="appointmentDateInput" />
+                            <span asp-validation-for="AppointmentDate" class="text-danger small"></span>
+                            <div id="dateStatusMessage" class="small mt-1"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="StartHour" class="form-label fw-semibold"></label>
+                            <select asp-for="StartHour" class="form-select" id="startHourSelect">
+                                @for (int hour = 9; hour <= 17; hour++)
+                                {
+                                    var displayTime = DateTime.Today.AddHours(hour).ToString("h:00 tt");
+                                    <option value="@hour">@displayTime</option>
+                                }
+                            </select>
+                            <span asp-validation-for="StartHour" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">2. Contact &amp; Vehicle Details</h5>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="CustomerFirstName" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerFirstName" class="form-control" placeholder="Jane" />
+                            <span asp-validation-for="CustomerFirstName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="CustomerLastName" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerLastName" class="form-control" placeholder="Doe" />
+                            <span asp-validation-for="CustomerLastName" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="CustomerPhone" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerPhone" class="form-control" placeholder="(555) 123-4567" />
+                            <span asp-validation-for="CustomerPhone" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="CustomerEmail" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerEmail" class="form-control" placeholder="jane@example.com" />
+                            <span asp-validation-for="CustomerEmail" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="CustomerServiceNotes" class="form-label fw-semibold"></label>
+                        <textarea asp-for="CustomerServiceNotes"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="Include your vehicle year/make/model and any symptoms or notes for our technicians..."></textarea>
+                        <span asp-validation-for="CustomerServiceNotes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold" id="submitBookingBtn">
+                            Confirm Appointment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const categorySelect = document.getElementById('serviceCategorySelect');
+            const dateInput = document.getElementById('appointmentDateInput');
+            const hourSelect = document.getElementById('startHourSelect');
+            const statusMsg = document.getElementById('dateStatusMessage');
+            const submitBtn = document.getElementById('submitBookingBtn');
+
+            function formatHour(hour) {
+                const suffix = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+                return `${displayHour}:00 ${suffix}`;
+            }
+
+            async function refreshAvailableSlots() {
+                const dateVal = dateInput.value;
+                const categoryId = categorySelect.value || 0;
+
+                if (!dateVal) {
+                    return;
+                }
+
+                const previouslySelectedHour = hourSelect.value;
+                statusMsg.textContent = 'Checking bay availability...';
+                statusMsg.className = 'small mt-1 text-muted';
+
+                try {
+                    const url = `@Url.Action("AvailableSlots", "Home")?date=${encodeURIComponent(dateVal)}&categoryId=${encodeURIComponent(categoryId)}`;
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Unable to check availability.');
+                    }
+
+                    const data = await response.json();
+                    hourSelect.innerHTML = '';
+
+                    if (data.isClosed) {
+                        statusMsg.textContent = 'The shop is closed on this date. Please choose another day.';
+                        statusMsg.className = 'small mt-1 text-danger fw-semibold';
+                        hourSelect.disabled = true;
+                        submitBtn.disabled = true;
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'Shop Closed';
+                        hourSelect.appendChild(opt);
+                        return;
+                    }
+
+                    if (!data.availableHours || data.availableHours.length === 0) {
+                        statusMsg.textContent = 'No open bays available on this date (or date is less than 2 days ahead).';
+                        statusMsg.className = 'small mt-1 text-danger fw-semibold';
+                        hourSelect.disabled = true;
+                        submitBtn.disabled = true;
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'No Slots Available';
+                        hourSelect.appendChild(opt);
+                        return;
+                    }
+
+                    hourSelect.disabled = false;
+                    submitBtn.disabled = false;
+                    statusMsg.textContent = `${data.availableHours.length} time slot(s) available.`;
+                    statusMsg.className = 'small mt-1 text-success';
+
+                    data.availableHours.forEach(hour => {
+                        const opt = document.createElement('option');
+                        opt.value = hour;
+                        opt.textContent = formatHour(hour);
+                        if (String(hour) === String(previouslySelectedHour)) {
+                            opt.selected = true;
+                        }
+                        hourSelect.appendChild(opt);
+                    });
+                } catch (err) {
+                    statusMsg.textContent = 'Could not load live availability. Server validation will still verify your slot.';
+                    statusMsg.className = 'small mt-1 text-warning';
+                    hourSelect.disabled = false;
+                    submitBtn.disabled = false;
+                }
+            }
+
+            categorySelect.addEventListener('change', refreshAvailableSlots);
+            dateInput.addEventListener('change', refreshAvailableSlots);
+            document.addEventListener('DOMContentLoaded', refreshAvailableSlots);
+        })();
+    </script>
+}

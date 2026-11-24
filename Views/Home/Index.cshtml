@@ -1,8 +1,117 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<OSAutoRepair.Models.ServiceCategory>
+
+@{
+    ViewData["Title"] = "O.S. Auto Repair | Reliable Local Auto Service";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Section -->
+<div class="p-5 mb-4 bg-dark text-white rounded-3 shadow-sm">
+    <div class="container-fluid py-3">
+        <span class="badge bg-warning text-dark mb-2">5-Bay Full-Service Workshop</span>
+        <h1 class="display-5 fw-bold">O.S. Auto Repair</h1>
+        <p class="col-md-8 fs-5 text-light">
+            Honest, straightforward automotive maintenance and repair. Schedule your service online in seconds—no account required.
+        </p>
+        <div class="mt-4 d-flex flex-wrap gap-2">
+            <a asp-controller="Home" asp-action="Book" class="btn btn-warning btn-lg fw-semibold px-4">
+                Book an Appointment
+            </a>
+            <a href="#services" class="btn btn-outline-light btn-lg px-4">
+                View Services
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Shop Info Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">Shop Hours</h5>
+                <p class="card-text mb-1"><strong>Monday – Friday:</strong> 9:00 AM – 5:00 PM</p>
+                <p class="card-text text-muted small mb-0">
+                    Online appointments are scheduled in 1-hour blocks starting between 9:00 AM and 5:00 PM.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">48-Hour Advance Booking</h5>
+                <p class="card-text mb-1">Book at least <strong>2 days in advance</strong>.</p>
+                <p class="card-text text-muted small mb-0">
+                    Need urgent same-day assistance? Call the shop directly so our technicians can check bay availability.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">Location &amp; Contact</h5>
+                <p class="card-text mb-1"><strong>O.S. Auto Repair</strong></p>
+                <p class="card-text mb-1">Phone: <a href="tel:5550192834" class="text-decoration-none">(555) 019-2834</a></p>
+                <p class="card-text text-muted small mb-0">
+                    Personal, one-on-one service from drop-off to pickup.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services Section -->
+<div id="services" class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="fw-bold mb-0">Our Services</h2>
+            <p class="text-muted mb-0">Select a service below to reserve a bay at least 2 days ahead.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var service in Model)
+            {
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h4 class="card-title fw-bold mb-0">@service.Name</h4>
+                                <span class="badge bg-secondary">
+                                    Est. @service.DefaultDurationHours @(service.DefaultDurationHours == 1 ? "hr" : "hrs")
+                                </span>
+                            </div>
+                            <p class="fs-5 text-success fw-semibold mb-2">
+                                Starting at @service.BaseEstimate.ToString("C")
+                            </p>
+                            <p class="card-text text-muted flex-grow-1">
+                                @(service.Name.Equals("Oil", StringComparison.OrdinalIgnoreCase)
+                                    ? "Routine oil and filter service to keep your engine protected and running smoothly."
+                                    : "Comprehensive mechanical diagnostics and hands-on repair by our shop technicians.")
+                            </p>
+                            <div class="mt-3">
+                                <a asp-controller="Home"
+                                   asp-action="Book"
+                                   asp-route-categoryId="@service.ServiceCategoryId"
+                                   class="btn btn-primary w-100">
+                                    Book @service.Name Appointment
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info">
+                    Online service listings are currently being updated. Please call the shop to schedule an appointment.
+                </div>
+            </div>
+        }
+    </div>
 </div>
