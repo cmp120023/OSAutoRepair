@@ -55,7 +55,7 @@ namespace OSAutoRepair.Controllers
         {
             var viewModel = new PublicBookingViewModel
             {
-                AppointmentDate = DateTime.Today.AddDays(2),
+                AppointmentDate = GetDefaultBookingDate(),
                 ServiceCategoryId = categoryId ?? 0
             };
 
@@ -195,5 +195,20 @@ namespace OSAutoRepair.Controllers
 
             model.ServiceCategories = new SelectList(categories, nameof(ServiceCategory.ServiceCategoryId), nameof(ServiceCategory.Name), model.ServiceCategoryId);
         }
+
+        /// <summary>
+        /// Calculates the earliest default booking date at least 2 days ahead, skipping Sundays and Mondays.
+        /// </summary>
+        /// <returns>The earliest open date at least 2 days from today.</returns>
+        private static DateTime GetDefaultBookingDate()
+        {
+            var candidate = DateTime.Today.AddDays(2);
+            while (candidate.DayOfWeek == DayOfWeek.Sunday || candidate.DayOfWeek == DayOfWeek.Monday)
+            {
+                candidate = candidate.AddDays(1);
+            }
+            return candidate;
+        }
+
     }
 }

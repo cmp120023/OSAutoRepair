@@ -151,7 +151,7 @@
                     hourSelect.innerHTML = '';
 
                     if (data.isClosed) {
-                        statusMsg.textContent = 'The shop is closed on this date. Please choose another day.';
+                        statusMsg.textContent = 'The shop is closed on Sundays, Mondays, and scheduled holidays. Please choose Tuesday–Saturday.';
                         statusMsg.className = 'small mt-1 text-danger fw-semibold';
                         hourSelect.disabled = true;
                         submitBtn.disabled = true;
@@ -161,6 +161,7 @@
                         hourSelect.appendChild(opt);
                         return;
                     }
+
 
                     if (!data.availableHours || data.availableHours.length === 0) {
                         statusMsg.textContent = 'No open bays available on this date (or date is less than 2 days ahead).';
