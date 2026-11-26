@@ -1,0 +1,116 @@
+﻿@model OSAutoRepair.ViewModels.ManageClosedDatesViewModel
+
+@{
+    ViewData["Title"] = "Manage Closed Dates | O.S. Auto Repair";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a asp-action="Index" class="text-decoration-none">&larr; Back to Dispatch Grid</a>
+                <h1 class="h3 fw-bold mt-2 mb-0">Manage Closed Dates &amp; Holidays</h1>
+                <p class="text-muted small mb-0">
+                    Dates listed here are blocked from public online customer bookings (Sundays and Mondays are closed automatically).
+                </p>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Add New Closed Date Form -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-dark text-white fw-semibold">
+                Add Holiday or Shop Closure
+            </div>
+            <div class="card-body">
+                <form asp-action="AddClosedDate" method="post" class="row g-3 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-4">
+                        <label asp-for="NewClosedDate" class="form-label fw-semibold"></label>
+                        <input asp-for="NewClosedDate" type="date" class="form-control" required />
+                        <span asp-validation-for="NewClosedDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Reason" class="form-label fw-semibold"></label>
+                        <input asp-for="Reason" class="form-control" placeholder="e.g., Thanksgiving Day, Shop Maintenance" />
+                        <span asp-validation-for="Reason" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button type="submit" class="btn btn-primary fw-semibold">
+                            Add Closed Date
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing Closed Dates Table -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-semibold">
+                Scheduled Closed Dates (@Model.ExistingClosedDates.Count)
+            </div>
+            <div class="card-body p-0">
+                @if (Model.ExistingClosedDates.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Date</th>
+                                    <th>Day</th>
+                                    <th>Reason / Holiday</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.ExistingClosedDates)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@item.Date.ToString("MMMM d, yyyy")</td>
+                                        <td>@item.Date.ToString("dddd")</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Reason) ? "Scheduled Closure" : item.Reason)</td>
+                                        <td class="text-end pe-3">
+                                            <form asp-action="DeleteClosedDate" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Remove @item.Date.ToString("MMM d, yyyy") from closed dates?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.ClosedDateId" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    Remove
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        No special closed dates or holidays are currently scheduled.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

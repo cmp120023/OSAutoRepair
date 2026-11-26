@@ -1,0 +1,519 @@
+﻿@model OSAutoRepair.ViewModels.DispatchGridViewModel
+
+@{
+    ViewData["Title"] = $"Dispatch Grid ({Model.SelectedDate:MMM d, yyyy}) | O.S. Auto Repair";
+    var prevDate = Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd");
+    var nextDate = Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd");
+    var todayDate = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<style>
+    .dispatch-grid-wrapper {
+        overflow-x: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        background-color: #ffffff;
+    }
+
+    .dispatch-grid {
+        display: grid;
+        grid-template-columns: 110px repeat(9, minmax(135px, 1fr));
+        grid-template-rows: 46px repeat(5, 88px);
+        min-width: 1325px;
+    }
+
+    .grid-header-cell {
+        background-color: #212529;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #343a40;
+        border-bottom: 2px solid #343a40;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+    }
+
+    .grid-header-corner {
+        left: 0;
+        z-index: 4;
+    }
+
+    .bay-label-cell {
+        background-color: #f8f9fa;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 2px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+    }
+
+    .grid-slot-cell {
+        border-right: 1px solid #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #ffffff;
+        transition: background-color 0.15s ease;
+        cursor: pointer;
+    }
+
+    .grid-slot-cell:hover {
+        background-color: #f1f5f9;
+    }
+
+    .grid-slot-cell.closed-day-slot {
+        background-color: #f8f9fa;
+    }
+
+    .appointment-block {
+        margin: 5px;
+        padding: 6px 10px;
+        border-radius: 0.375rem;
+        color: #ffffff;
+        cursor: pointer;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        border-left: 4px solid rgba(0, 0, 0, 0.25);
+        position: relative;
+        transition: transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .appointment-block:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .appointment-block.service-oil {
+        background-color: #0d6efd;
+    }
+
+    .appointment-block.service-repair {
+        background-color: #198754;
+    }
+
+    .appointment-block.service-other {
+        background-color: #6f42c1;
+    }
+
+    .appointment-title {
+        font-weight: 700;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .appointment-sub {
+        font-size: 0.75rem;
+        opacity: 0.92;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
+<!-- Top Toolbar -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h1 class="h3 fw-bold mb-0">5-Bay Dispatch Grid</h1>
+        <p class="text-muted small mb-0">
+            @Model.SelectedDate.ToString("dddd, MMMM d, yyyy") &bull; Click any job to inspect or edit notes
+        </p>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="btn-group" role="group" aria-label="Date navigation">
+            <a asp-action="Index" asp-route-date="@prevDate" class="btn btn-outline-secondary btn-sm">&larr; Prev</a>
+            <a asp-action="Index" asp-route-date="@todayDate" class="btn btn-outline-secondary btn-sm">Today</a>
+            <a asp-action="Index" asp-route-date="@nextDate" class="btn btn-outline-secondary btn-sm">Next &rarr;</a>
+        </div>
+
+        <form asp-action="Index" method="get" class="d-flex align-items-center gap-1">
+            <input type="date"
+                   name="date"
+                   value="@Model.SelectedDate.ToString("yyyy-MM-dd")"
+                   class="form-control form-control-sm"
+                   onchange="this.form.submit()" />
+        </form>
+
+        <a asp-action="ClosedDates" class="btn btn-outline-dark btn-sm">
+            Manage Closed Dates
+        </a>
+
+        <button type="button"
+                class="btn btn-primary btn-sm fw-semibold"
+                data-bs-toggle="modal"
+                data-bs-target="#walkInModal"
+                onclick="openWalkInModal(1, 9)">
+            + Walk-In Appointment
+        </button>
+    </div>
+</div>
+
+<!-- Alerts & Closed Date Banner -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["WalkInError"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+        @TempData["WalkInError"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.IsShopClosed)
+{
+    var closedReason = Model.ClosedDateInfo != null
+        ? $"Scheduled Shop Closure{(string.IsNullOrWhiteSpace(Model.ClosedDateInfo.Reason) ? "" : $": {Model.ClosedDateInfo.Reason}")}"
+        : $"Regular Weekly Closure ({Model.SelectedDate:dddd})";
+
+    <div class="alert alert-warning d-flex justify-content-between align-items-center py-2 mb-3">
+        <div>
+            <strong>Shop Closed to Public Bookings:</strong> @closedReason. Technicians may still override and schedule walk-ins below.
+        </div>
+    </div>
+}
+
+<!-- 5x9 Spreadsheet Dispatch Grid -->
+<div class="dispatch-grid-wrapper shadow-sm mb-4">
+    <div class="dispatch-grid" id="dispatchGrid" data-selected-date="@Model.SelectedDate.ToString("yyyy-MM-dd")">
+        <!-- Header Row (Row 1) -->
+        <div class="grid-header-cell grid-header-corner" style="grid-row: 1; grid-column: 1;">Bay / Time</div>
+        @for (int hour = 9; hour <= 17; hour++)
+        {
+            int colIndex = hour - 9 + 2;
+            var label = DateTime.Today.AddHours(hour).ToString("h:00 tt");
+            <div class="grid-header-cell" style="grid-row: 1; grid-column: @colIndex;">@label</div>
+        }
+
+        <!-- Background Cells for Bays 1-5 (Rows 2-6) -->
+        @for (int bay = 1; bay <= 5; bay++)
+        {
+            int rowIndex = bay + 1;
+            <div class="bay-label-cell" style="grid-row: @rowIndex; grid-column: 1;">Bay @bay</div>
+
+            for (int hour = 9; hour <= 17; hour++)
+            {
+                int colIndex = hour - 9 + 2;
+                <div class="grid-slot-cell @(Model.IsShopClosed ? "closed-day-slot" : "")"
+                     style="grid-row: @rowIndex; grid-column: @colIndex;"
+                     data-bay="@bay"
+                     data-hour="@hour"
+                     title="Click to schedule walk-in in Bay @bay at @DateTime.Today.AddHours(hour).ToString("h:00 tt")"
+                     onclick="openWalkInModal(@bay, @hour)">
+                </div>
+            }
+        }
+
+        <!-- Appointment Blocks -->
+        @foreach (var appt in Model.Appointments)
+        {
+            int rowIndex = appt.BayNumber + 1;
+            int startCol = appt.StartHour - 9 + 2;
+            int maxSpan = Math.Min(appt.DurationHours, 18 - appt.StartHour);
+            int spanCols = Math.Max(1, maxSpan);
+
+            var categoryName = appt.ServiceCategory?.Name ?? "Service";
+            var serviceCss = categoryName.Equals("Oil", StringComparison.OrdinalIgnoreCase)
+                ? "service-oil"
+                : categoryName.Equals("Repair", StringComparison.OrdinalIgnoreCase)
+                    ? "service-repair"
+                    : "service-other";
+
+            var endHourText = DateTime.Today.AddHours(appt.StartHour + appt.DurationHours).ToString("h:00 tt");
+
+            <div class="appointment-block @serviceCss"
+                 style="grid-row: @rowIndex; grid-column: @startCol / span @spanCols;"
+                 data-appointment-id="@appt.AppointmentId"
+                 data-bay="@appt.BayNumber"
+                 data-start-hour="@appt.StartHour"
+                 data-duration="@appt.DurationHours"
+                 onclick="openInspectDrawer(@appt.AppointmentId)">
+                <div class="d-flex justify-content-between align-items-center gap-1">
+                    <span class="badge bg-dark bg-opacity-50">@categoryName</span>
+                    <small class="opacity-75">@appt.DurationHours hr@(appt.DurationHours == 1 ? "" : "s")</small>
+                </div>
+                <div class="appointment-title">@appt.CustomerFirstName @appt.CustomerLastName</div>
+                <div class="appointment-sub">@appt.CustomerPhone &bull; Ends @endHourText</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Click-to-Inspect Offcanvas Side Drawer -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="inspectDrawer" aria-labelledby="inspectDrawerLabel">
+    <div class="offcanvas-header bg-dark text-white">
+        <div>
+            <h5 class="offcanvas-title fw-bold mb-0" id="inspectDrawerLabel">Appointment Details</h5>
+            <small class="text-light opacity-75" id="drawerSubtitle">Loading...</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div id="drawerAlert" class="alert d-none py-2 small" role="alert"></div>
+
+        <div class="mb-3 p-3 bg-light rounded border">
+            <h6 class="fw-bold text-uppercase small text-muted mb-2">Customer Information</h6>
+            <p class="mb-1 fw-semibold" id="drawerCustomerName"></p>
+            <p class="mb-1 small"><strong>Phone:</strong> <a id="drawerCustomerPhone" href="#"></a></p>
+            <p class="mb-1 small"><strong>Email:</strong> <span id="drawerCustomerEmail"></span></p>
+            <p class="mb-0 small"><strong>Schedule:</strong> <span id="drawerScheduleSummary"></span></p>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold small text-muted text-uppercase">Customer Submitted Issue / Vehicle Notes</label>
+            <div class="p-2 bg-light border rounded small" id="drawerCustomerNotes" style="min-height: 60px; white-space: pre-wrap;"></div>
+        </div>
+
+        <form id="drawerUpdateForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="drawerAppointmentId" />
+
+            <div class="mb-3">
+                <label for="drawerTechNotes" class="form-label fw-semibold">Technician Notes (Vehicle, Parts Needed, Work Done)</label>
+                <textarea id="drawerTechNotes"
+                          class="form-control"
+                          rows="4"
+                          placeholder="Enter vehicle year/make/model, parts ordered, or internal repair notes..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="drawerEstimatedCost" class="form-label fw-semibold">Estimated Cost ($)</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" step="0.01" min="0" id="drawerEstimatedCost" class="form-control" />
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary fw-semibold" id="saveDrawerBtn">
+                    Save Technician Notes &amp; Estimate
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">
+                    Close Drawer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Walk-In / Same-Day Override Modal -->
+<div class="modal fade" id="walkInModal" tabindex="-1" aria-labelledby="walkInModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-action="CreateWalkIn" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="walkInModalLabel">Schedule Walk-In / Override Appointment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label asp-for="WalkInForm.AppointmentDate" class="form-label fw-semibold"></label>
+                            <input asp-for="WalkInForm.AppointmentDate" type="date" class="form-control" id="walkInDateInput" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="WalkInForm.BayNumber" class="form-label fw-semibold"></label>
+                            <select asp-for="WalkInForm.BayNumber" class="form-select" id="walkInBaySelect">
+                                @for (int b = 1; b <= 5; b++)
+                                {
+                                    <option value="@b">Bay @b</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="WalkInForm.StartHour" class="form-label fw-semibold"></label>
+                            <select asp-for="WalkInForm.StartHour" class="form-select" id="walkInHourSelect">
+                                @for (int h = 9; h <= 17; h++)
+                                {
+                                    <option value="@h">@DateTime.Today.AddHours(h).ToString("h:00 tt")</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label asp-for="WalkInForm.ServiceCategoryId" class="form-label fw-semibold"></label>
+                            <select asp-for="WalkInForm.ServiceCategoryId" asp-items="Model.ServiceCategories" class="form-select" required>
+                                <option value="">-- Select Service --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="WalkInForm.DurationHours" class="form-label fw-semibold"></label>
+                            <select asp-for="WalkInForm.DurationHours" class="form-select">
+                                @for (int d = 1; d <= 8; d++)
+                                {
+                                    <option value="@d">@d hr@(d == 1 ? "" : "s")</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="WalkInForm.CustomerFirstName" class="form-label fw-semibold"></label>
+                            <input asp-for="WalkInForm.CustomerFirstName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="WalkInForm.CustomerLastName" class="form-label fw-semibold"></label>
+                            <input asp-for="WalkInForm.CustomerLastName" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="WalkInForm.CustomerPhone" class="form-label fw-semibold"></label>
+                            <input asp-for="WalkInForm.CustomerPhone" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="WalkInForm.CustomerEmail" class="form-label fw-semibold"></label>
+                            <input asp-for="WalkInForm.CustomerEmail" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="WalkInForm.CustomerServiceNotes" class="form-label fw-semibold"></label>
+                        <textarea asp-for="WalkInForm.CustomerServiceNotes" class="form-control" rows="2" placeholder="Vehicle info and customer issue..."></textarea>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="WalkInForm.TechnicianServiceNotes" class="form-label fw-semibold"></label>
+                        <textarea asp-for="WalkInForm.TechnicianServiceNotes" class="form-control" rows="2" placeholder="Optional internal technician or parts notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">Add to Dispatch Grid</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        let inspectOffcanvas = null;
+        let walkInBootstrapModal = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const drawerEl = document.getElementById('inspectDrawer');
+            if (drawerEl) {
+                inspectOffcanvas = new bootstrap.Offcanvas(drawerEl);
+            }
+            const modalEl = document.getElementById('walkInModal');
+            if (modalEl) {
+                walkInBootstrapModal = new bootstrap.Modal(modalEl);
+            }
+        });
+
+        function formatShopHour(hour) {
+            const suffix = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+            return `${displayHour}:00 ${suffix}`;
+        }
+
+        function openWalkInModal(bayNumber, startHour) {
+            document.getElementById('walkInBaySelect').value = bayNumber;
+            document.getElementById('walkInHourSelect').value = startHour;
+            if (walkInBootstrapModal) {
+                walkInBootstrapModal.show();
+            }
+        }
+
+        async function openInspectDrawer(appointmentId) {
+            const alertBox = document.getElementById('drawerAlert');
+            alertBox.className = 'alert d-none py-2 small';
+
+            try {
+                const url = `@Url.Action("DetailsJson", "Dispatch")/${appointmentId}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Could not load appointment details.');
+                }
+
+                const data = await response.json();
+                document.getElementById('drawerAppointmentId').value = data.appointmentId;
+                document.getElementById('inspectDrawerLabel').textContent = `${data.serviceCategoryName} (#${data.appointmentId})`;
+                document.getElementById('drawerSubtitle').textContent = `Bay ${data.bayNumber} • ${data.appointmentDate}`;
+                document.getElementById('drawerCustomerName').textContent = `${data.customerFirstName} ${data.customerLastName}`;
+
+                const phoneLink = document.getElementById('drawerCustomerPhone');
+                phoneLink.textContent = data.customerPhone;
+                phoneLink.href = `tel:${data.customerPhone}`;
+
+                document.getElementById('drawerCustomerEmail').textContent = data.customerEmail || 'Not provided';
+                document.getElementById('drawerScheduleSummary').textContent =
+                    `Bay ${data.bayNumber} | ${formatShopHour(data.startHour)} – ${formatShopHour(data.startHour + data.durationHours)} (${data.durationHours} hr${data.durationHours === 1 ? '' : 's'})`;
+
+                document.getElementById('drawerCustomerNotes').textContent =
+                    data.customerServiceNotes || 'No customer notes submitted.';
+                document.getElementById('drawerTechNotes').value = data.technicianServiceNotes || '';
+                document.getElementById('drawerEstimatedCost').value = Number(data.estimatedCost || 0).toFixed(2);
+
+                if (inspectOffcanvas) {
+                    inspectOffcanvas.show();
+                }
+            } catch (err) {
+                alert(err.message || 'Error loading appointment details.');
+            }
+        }
+
+        document.getElementById('drawerUpdateForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('drawerAlert');
+            const saveBtn = document.getElementById('saveDrawerBtn');
+            const token = this.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const payload = {
+                appointmentId: parseInt(document.getElementById('drawerAppointmentId').value, 10),
+                technicianServiceNotes: document.getElementById('drawerTechNotes').value,
+                estimatedCost: parseFloat(document.getElementById('drawerEstimatedCost').value) || 0
+            };
+
+            saveBtn.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("UpdateDetails", "Dispatch")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Failed to save changes.');
+                }
+
+                alertBox.textContent = result.message;
+                alertBox.className = 'alert alert-success py-2 small';
+            } catch (err) {
+                alertBox.textContent = err.message || 'Error saving updates.';
+                alertBox.className = 'alert alert-danger py-2 small';
+            } finally {
+                saveBtn.disabled = false;
+            }
+        });
+    </script>
+}

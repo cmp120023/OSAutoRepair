@@ -12,12 +12,9 @@
         <p class="col-md-8 fs-5 text-light">
             Honest, straightforward automotive maintenance and repair. Schedule your service online in seconds—no account required.
         </p>
-        <div class="mt-4 d-flex flex-wrap gap-2">
+        <div class="mt-4">
             <a asp-controller="Home" asp-action="Book" class="btn btn-warning btn-lg fw-semibold px-4">
                 Book an Appointment
-            </a>
-            <a href="#services" class="btn btn-outline-light btn-lg px-4">
-                View Services
             </a>
         </div>
     </div>
@@ -29,7 +26,8 @@
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title fw-bold">Shop Hours</h5>
-                <p class="card-text mb-1"><strong>Monday – Friday:</strong> 9:00 AM – 5:00 PM</p>
+                <p class="card-text mb-1"><strong>Tuesday – Saturday:</strong> 9:00 AM – 5:00 PM</p>
+                <p class="card-text mb-1 text-muted small"><strong>Sunday – Monday:</strong> Closed</p>
                 <p class="card-text text-muted small mb-0">
                     Online appointments are scheduled in 1-hour blocks starting between 9:00 AM and 5:00 PM.
                 </p>
@@ -52,7 +50,14 @@
             <div class="card-body">
                 <h5 class="card-title fw-bold">Location &amp; Contact</h5>
                 <p class="card-text mb-1"><strong>O.S. Auto Repair</strong></p>
-                <p class="card-text mb-1">Phone: <a href="tel:5550192834" class="text-decoration-none">(555) 019-2834</a></p>
+                <p class="card-text mb-1">Phone: <a href="tel:2067622610" class="text-decoration-none">(206)762-2610</a></p>
+                <p class="card-text mb-1">Address:
+                    <a href="https://www.google.com/maps/@@47.469603,-122.3335491,103a,75y,88.3h,93.09t/data=!3m7!1e1!3m5!1sb49oIAFNqJjDZVKhJh9AsA!2e0!6shttps:%2F%2Fstreetviewpixels-pa.clients6.google.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D-3.085953933715132%26panoid%3Db49oIAFNqJjDZVKhJh9AsA%26yaw%3D88.30256767443093!7i16384!8i8192?entry=ttu&g_ep=EgoyMDI2MTEyMi4wIKXMDSoASAFQAw%3D%3D"
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         class="text-decoration-none">
+                         14836 1st Ave S, Burien, WA 98168
+                     </a></p>
                 <p class="card-text text-muted small mb-0">
                     Personal, one-on-one service from drop-off to pickup.
                 </p>
@@ -84,9 +89,6 @@
                                     Est. @service.DefaultDurationHours @(service.DefaultDurationHours == 1 ? "hr" : "hrs")
                                 </span>
                             </div>
-                            <p class="fs-5 text-success fw-semibold mb-2">
-                                Starting at @service.BaseEstimate.ToString("C")
-                            </p>
                             <p class="card-text text-muted flex-grow-1">
                                 @(service.Name.Equals("Oil", StringComparison.OrdinalIgnoreCase)
                                     ? "Routine oil and filter service to keep your engine protected and running smoothly."
