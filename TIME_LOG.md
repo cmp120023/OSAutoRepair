@@ -11,9 +11,9 @@
 | Date | Milestone / Issue | Branch | Tasks Completed | Hours |
 | :--- | :--- | :--- | :--- | :--- |
 | Nov 17, 2026 | Project Setup & Planning | `master` / `develop` | Client requirements discovery (2 hours), ASP.NET Core MVC scaffolding, NuGet/LocalDB setup, GitHub milestones & issues | 4.5 |
-| Nov 19, 2026 | M1: Database Schema & Technician Auth (`#1`, `#2`) | `develop` / `feat/issue-1-ef-core-models` / `feat/issue-2-lock-tech-registration` | Create core models (2.5 hrs), notes/comprehension (1.75 hrs), client communication (15 min), DbContext & EF Core migration (1 hr), scaffold Identity & lock registration (1 hr) | 6.5 |
+| Nov 19, 2026 | M1: Database Schema & Technician Auth (`#1`, `#2`) | `develop` / `feat/issue-1-ef-core-models` / `feat/issue-2-lock-tech-registration` | Create core models (2.5 hrs), notes/comprehension (1.75 hrs), client communication (0.25 hr), DbContext & EF Core migration (1 hr), scaffold Identity & lock registration (1 hr) | 6.5 |
 | Nov 23, 2026 | M2: Public Storefront & 48-Hour Booking (`#3`, `#4`) | `develop` / `feat/M2-issue-3-public-booking` | Create `PublicBookingViewModel.cs` (1 hr), `SchedulingService.cs` & DI registration (1 hr), `HomeController.cs` & storefront `Views/Home/Index.cshtml` (1 hr), notes/comprehension (1 hr) | 4 |
-| Nov 24, 2026 | M2: Public Storefront & 48-Hour Booking (`#3`, `#4`) | `develop` / `feat/M2-issue-3-public-booking` | Study & Comprehension (1.5 hrs), implemented Generic AI templates `Views/Home/Book.cshtml` and `Views/Home/BookingConfirmation.cshtml` (0.5 hr) | 2 |
+| Nov 24, 2026 | M2: Public Storefront & 48-Hour Booking (`#3`, `#4`) | `develop` / `feat/M2-issue-3-public-booking` | Client Communication (0.5 hours), Adding Weekends Off (0.5 hours), Study & Comprehension (1.5 hrs), implemented Generic AI templates `Views/Home/Book.cshtml` and `Views/Home/BookingConfirmation.cshtml` (0.5 hr) | 3 |
 
 **Total Logged Hours:** `17 hrs` *(Update at the end of each work session)*
 
